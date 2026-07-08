@@ -1,21 +1,110 @@
 /*
  * File: statement.cpp
  * -------------------
- * This file implements the constructor and destructor for
- * the Statement class itself.  Your implementation must do
- * the same for the subclasses you define for each of the
- * BASIC statements.
+ * Implementation of the Statement hierarchy.
  */
 
 #include "statement.hpp"
-
-
-/* Implementation of the Statement class */
-
-int stringToInt(std::string str);
+#include <iostream>
 
 Statement::Statement() = default;
-
 Statement::~Statement() = default;
 
-//todo
+// REM
+RemStatement::RemStatement(TokenScanner &scanner) {
+    // Consume the rest of the line
+    while (scanner.hasMoreTokens()) {
+        scanner.nextToken();
+    }
+}
+int RemStatement::execute(EvalState &state, Program &program) {
+    return -2;
+}
+
+// LET
+LetStatement::LetStatement(TokenScanner &scanner) {
+    scanner.verifyToken("="); // This is handled by the parser usually, but here we are in Statement constructor
+    // Wait, the constructor should be called after "LET" is consumed.
+    // The tokens remaining are: <var> = <exp>
+    varName = scanner.nextToken();
+    if (varName == "LET") error("SYNTAX ERROR"); // Keyword as variable
+    scanner.verifyToken("=");
+    exp = parseExp(scanner);
+}
+int LetStatement::execute(EvalState &state, Program &program) {
+    state.setValue(varName, exp->eval(state));
+    return -2;
+}
+LetStatement::~LetStatement() {
+    delete exp;
+}
+
+// PRINT
+PrintStatement::PrintStatement(TokenScanner &scanner) {
+    exp = parseExp(scanner);
+}
+int PrintStatement::execute(EvalState &state, Program &program) {
+    std::cout << exp->eval(state) << std::endl;
+    return -2;
+}
+PrintStatement::~PrintStatement() {
+    delete exp;
+}
+
+// INPUT
+InputStatement::InputStatement(TokenScanner &scanner) {
+    varName = scanner.nextToken();
+}
+int InputStatement::execute(EvalState &state, Program &program) {
+    int val;
+    if (!(std::cin >> val)) {
+        // This is a simplified input handler
+    }
+    state.setValue(varName, val);
+    return -2;
+}
+
+// END
+EndStatement::EndStatement(TokenScanner &scanner) {
+    if (scanner.hasMoreTokens()) error("END statement must not have extra tokens");
+}
+int EndStatement::execute(EvalState &state, Program &program) {
+    return -1;
+}
+
+// GOTO
+GotoStatement::GotoStatement(TokenScanner &scanner) {
+    std::string token = scanner.nextToken();
+    line = stringToInteger(token);
+}
+int GotoStatement::execute(EvalState &state, Program &program) {
+    return line;
+}
+
+// IF
+IfStatement::IfStatement(TokenScanner &scanner) {
+    // IF <exp1> <op> <exp2> THEN <line>
+    lhs = readE(scanner);
+    op = scanner.nextToken();
+    rhs = readE(scanner);
+    scanner.verifyToken("THEN");
+    targetLine = stringToInteger(scanner.nextToken());
+}
+int IfStatement::execute(EvalState &state, Program &program) {
+    int v1 = lhs->eval(state);
+    int v2 = rhs->eval(state);
+    bool condition = false;
+    if (op == ">") condition = v1 > v2;
+    else if (op == "<") condition = v1 < v2;
+    else if (op == ">=") condition = v1 >= v2;
+    else if (op == "<=") condition = v1 <= v2;
+    else if (op == "==") condition = v1 == v2;
+    else if (op == "!=") condition = v1 != v2;
+    
+    if (condition) return targetLine;
+    return -2;
+}
+IfStatement::~IfStatement() {
+    delete lhs;
+    delete rhs;
+}

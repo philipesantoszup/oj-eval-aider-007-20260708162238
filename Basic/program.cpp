@@ -1,64 +1,71 @@
 /*
  * File: program.cpp
  * -----------------
- * This file is a stub implementation of the program.h interface
- * in which none of the methods do anything beyond returning a
- * value of the correct type.  Your job is to fill in the bodies
- * of each of these methods with an implementation that satisfies
- * the performance guarantees specified in the assignment.
+ * This file implements the Program class for storing a BASIC
+ * program.
  */
 
 #include "program.hpp"
-
-
+#include "Utils/error.hpp"
 
 Program::Program() = default;
 
-Program::~Program() = default;
-
-void Program::clear() {
-    // Replace this stub with your own code
-    //todo
+Program::~Program() {
+    clear();
 }
 
-void Program::addSourceLine(int lineNumber, const std::string &line) {
-    // Replace this stub with your own code
-    //todo
+void Program::clear() {
+    for (auto const& [line, pair] : lines) {
+        delete pair.second;
+    }
+    lines.clear();
+}
+
+void Program::addSourceLine(int lineNumber, const std::string& line) {
+    if (lines.count(lineNumber)) {
+        delete lines[lineNumber].second;
+    }
+    lines[lineNumber] = {line, nullptr};
 }
 
 void Program::removeSourceLine(int lineNumber) {
-    // Replace this stub with your own code
-    //todo
+    if (lines.count(lineNumber)) {
+        delete lines[lineNumber].second;
+        lines.erase(lineNumber);
+    }
 }
 
 std::string Program::getSourceLine(int lineNumber) {
-    // Replace this stub with your own code
-    //todo
+    if (lines.count(lineNumber)) {
+        return lines[lineNumber].first;
+    }
+    return "";
 }
 
 void Program::setParsedStatement(int lineNumber, Statement *stmt) {
-    // Replace this stub with your own code
-    //todo
+    if (!lines.count(lineNumber)) {
+        error("setParsedStatement: Line number " + std::to_string(lineNumber) + " does not exist");
+    }
+    if (lines[lineNumber].second != nullptr) {
+        delete lines[lineNumber].second;
+    }
+    lines[lineNumber].second = stmt;
 }
 
-//void Program::removeSourceLine(int lineNumber) {
-
 Statement *Program::getParsedStatement(int lineNumber) {
-   // Replace this stub with your own code
-   //todo
+    if (lines.count(lineNumber)) {
+        return lines[lineNumber].second;
+    }
+    return nullptr;
 }
 
 int Program::getFirstLineNumber() {
-    // Replace this stub with your own code
-    //todo
+    if (lines.empty()) return -1;
+    return lines.begin()->first;
 }
 
 int Program::getNextLineNumber(int lineNumber) {
-    // Replace this stub with your own code
-    //todo
+    auto it = lines.upper_bound(lineNumber);
+    if (it == lines.end()) return -1;
+    return it->first;
 }
-
-//more func to add
-//todo
-
-
