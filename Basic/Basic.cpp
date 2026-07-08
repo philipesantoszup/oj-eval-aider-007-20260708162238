@@ -87,15 +87,27 @@ void processLine(string line, Program &program, EvalState &state) {
         string upperCmd = toUpperCase(firstToken);
         if (upperCmd == "PRINT") {
             TokenScanner s; s.ignoreWhitespace(); s.scanNumbers(); s.setInput(line.substr(firstToken.length()));
-            Expression *e = parseExp(s);
-            cout << e->eval(state) << endl;
+            Expression *e = nullptr;
+            try {
+                e = parseExp(s);
+                cout << e->eval(state) << endl;
+            } catch (...) {
+                delete e;
+                throw;
+            }
             delete e;
         } else if (upperCmd == "LET") {
             TokenScanner s; s.ignoreWhitespace(); s.scanNumbers(); s.setInput(line.substr(firstToken.length()));
             string var = s.nextToken();
             s.verifyToken("=");
-            Expression *e = parseExp(s);
-            state.setValue(var, e->eval(state));
+            Expression *e = nullptr;
+            try {
+                e = parseExp(s);
+                state.setValue(var, e->eval(state));
+            } catch (...) {
+                delete e;
+                throw;
+            }
             delete e;
         } else if (upperCmd == "RUN") {
             int pc = program.getFirstLineNumber();
