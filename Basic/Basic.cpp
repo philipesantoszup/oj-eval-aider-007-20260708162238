@@ -62,16 +62,21 @@ void processLine(string line, Program &program, EvalState &state) {
             string cmd = remScanner.nextToken();
             string upperCmd = toUpperCase(cmd);
             Statement *stmt = nullptr;
-            if (upperCmd == "LET") stmt = new LetStatement(remScanner);
-            else if (upperCmd == "PRINT") stmt = new PrintStatement(remScanner);
-            else if (upperCmd == "INPUT") stmt = new InputStatement(remScanner);
-            else if (upperCmd == "REM") stmt = new RemStatement(remScanner);
-            else if (upperCmd == "GOTO") stmt = new GotoStatement(remScanner);
-            else if (upperCmd == "IF") stmt = new IfStatement(remScanner);
-            else if (upperCmd == "END") stmt = new EndStatement(remScanner);
-            else error("Unknown statement type: " + upperCmd);
-            
-            program.setParsedStatement(lineNum, stmt);
+            try {
+                if (upperCmd == "LET") stmt = new LetStatement(remScanner);
+                else if (upperCmd == "PRINT") stmt = new PrintStatement(remScanner);
+                else if (upperCmd == "INPUT") stmt = new InputStatement(remScanner);
+                else if (upperCmd == "REM") stmt = new RemStatement(remScanner);
+                else if (upperCmd == "GOTO") stmt = new GotoStatement(remScanner);
+                else if (upperCmd == "IF") stmt = new IfStatement(remScanner);
+                else if (upperCmd == "END") stmt = new EndStatement(remScanner);
+                else error("Unknown statement type: " + upperCmd);
+                
+                program.setParsedStatement(lineNum, stmt);
+            } catch (...) {
+                delete stmt;
+                throw;
+            }
         }
     } else {
         // Immediate Mode: Command
@@ -92,24 +97,21 @@ void processLine(string line, Program &program, EvalState &state) {
             int pc = program.getFirstLineNumber();
             while (pc != -1) {
                 Statement *stmt = program.getParsedStatement(pc);
-                if (!stmt) error("Line " + to_string(pc) + " has no parsed statement");
+                if (!stmt) {
+                    pc = program.getNextLineNumber(pc);
+                    continue;
+                }
                 int next = stmt->execute(state, program);
                 if (next == -1) break;
                 if (next == -2) pc = program.getNextLineNumber(pc);
                 else pc = next;
-                if (pc != -1 && !program.getParsedStatement(pc)) {
-                    // If the line exists but isn't parsed, we should probably error or skip
-                    // Based on spec, we assume all lines in RUN are valid.
-                }
             }
         } else if (upperCmd == "LIST") {
-            // This requires a way to iterate through the program. 
-            // I'll add a helper or just use the map.
-            // Since I can't easily add methods to Program without updating .hpp, 
-            // I'll assume I can use the existing ones or I'll update the .hpp.
-            // Actually, I'll just implement a simple loop using getFirst and getNext.
             int pc = program.getFirstLineNumber();
             while (pc != -1) {
+                // The spec usually requires printing the line number and the source
+                // Since getSourceLine returns the whole line including the number, 
+                // we just print it.
                 cout << program.getSourceLine(pc) << endl;
                 pc = program.getNextLineNumber(pc);
             }

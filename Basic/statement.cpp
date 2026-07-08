@@ -23,8 +23,7 @@ int RemStatement::execute(EvalState &state, Program &program) {
 
 // LET
 LetStatement::LetStatement(TokenScanner &scanner) {
-    scanner.verifyToken("="); // This is handled by the parser usually, but here we are in Statement constructor
-    // Wait, the constructor should be called after "LET" is consumed.
+    // The "LET" keyword has already been consumed by Basic.cpp
     // The tokens remaining are: <var> = <exp>
     varName = scanner.nextToken();
     if (varName == "LET") error("SYNTAX ERROR"); // Keyword as variable
@@ -58,7 +57,7 @@ InputStatement::InputStatement(TokenScanner &scanner) {
 int InputStatement::execute(EvalState &state, Program &program) {
     int val;
     if (!(std::cin >> val)) {
-        // This is a simplified input handler
+        // Handle input failure if necessary
     }
     state.setValue(varName, val);
     return -2;
@@ -88,7 +87,8 @@ IfStatement::IfStatement(TokenScanner &scanner) {
     op = scanner.nextToken();
     rhs = readE(scanner);
     scanner.verifyToken("THEN");
-    targetLine = stringToInteger(scanner.nextToken());
+    std::string target = scanner.nextToken();
+    targetLine = stringToInteger(target);
 }
 int IfStatement::execute(EvalState &state, Program &program) {
     int v1 = lhs->eval(state);
