@@ -48,16 +48,20 @@ void processLine(string line, Program &program, EvalState &state) {
     if (isdigit(firstToken[0])) {
         // Program Mode: Numbered Line
         int lineNum = stringToInteger(firstToken);
-        string remaining = line.substr(firstToken.length());
         
-        // If the line only contains the number, it's a deletion
+        // To check if it's a deletion, we see if there are more tokens
+        // We use a fresh scanner for the remaining part of the line
+        string remaining = line.substr(firstToken.length());
         TokenScanner remScanner;
         remScanner.ignoreWhitespace();
+        remScanner.scanNumbers();
         remScanner.setInput(remaining);
+        
         if (!remScanner.hasMoreTokens()) {
             program.removeSourceLine(lineNum);
         } else {
             program.addSourceLine(lineNum, line);
+            
             // Parse the statement
             string cmd = remScanner.nextToken();
             string upperCmd = toUpperCase(cmd);
@@ -109,9 +113,6 @@ void processLine(string line, Program &program, EvalState &state) {
         } else if (upperCmd == "LIST") {
             int pc = program.getFirstLineNumber();
             while (pc != -1) {
-                // The spec usually requires printing the line number and the source
-                // Since getSourceLine returns the whole line including the number, 
-                // we just print it.
                 cout << program.getSourceLine(pc) << endl;
                 pc = program.getNextLineNumber(pc);
             }

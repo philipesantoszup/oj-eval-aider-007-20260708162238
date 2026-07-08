@@ -16,21 +16,27 @@ Program::~Program() {
 
 void Program::clear() {
     for (auto const& [line, pair] : lines) {
-        delete pair.second;
+        if (pair.second != nullptr) {
+            delete pair.second;
+        }
     }
     lines.clear();
 }
 
 void Program::addSourceLine(int lineNumber, const std::string& line) {
     if (lines.count(lineNumber)) {
-        delete lines[lineNumber].second;
+        if (lines[lineNumber].second != nullptr) {
+            delete lines[lineNumber].second;
+        }
     }
     lines[lineNumber] = {line, nullptr};
 }
 
 void Program::removeSourceLine(int lineNumber) {
     if (lines.count(lineNumber)) {
-        delete lines[lineNumber].second;
+        if (lines[lineNumber].second != nullptr) {
+            delete lines[lineNumber].second;
+        }
         lines.erase(lineNumber);
     }
 }
